@@ -5,12 +5,12 @@
     Real-time Audio Streaming Web App for Hajj/Umrah Pilgrims
   </p>
   <p align="center">
-    <a href="#fitur">Fitur</a> •
-    <a href="#demo">Demo</a> •
-    <a href="#instalasi">Instalasi</a> •
-    <a href="#penggunaan">Penggunaan</a> •
-    <a href="#tech-stack">Tech Stack</a> •
-    <a href="#kontribusi">Kontribusi</a>
+    <a href="#-fitur">Fitur</a> •
+    <a href="#-demo">Demo</a> •
+    <a href="#-instalasi">Instalasi</a> •
+    <a href="#-penggunaan">Penggunaan</a> •
+    <a href="#-tech-stack">Tech Stack</a> •
+    <a href="#-kontribusi">Kontribusi</a>
   </p>
 </p>
 
@@ -247,7 +247,7 @@ Kontribusi sangat diterima! Silakan:
 
 ## 📄 Lisensi
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ---
 
