@@ -93,8 +93,8 @@
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/username/gema.git
-cd gema
+git clone https://github.com/TomoNx/GEMA.git
+cd GEMA
 
 # 2. Install dependencies
 composer install
