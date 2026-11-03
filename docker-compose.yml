@@ -1,14 +1,67 @@
-version: '3.8'
-
 services:
-  livekit:
-    image: livekit/livekit-server:latest
-    container_name: gema-livekit
-    ports:
-      - "7880:7880"
-      - "7881:7881"
-      - "7882:7882/udp"
-    environment:
-      LIVEKIT_KEYS: "devkey: secret"
-    command: --dev --bind 0.0.0.0
+  web:
+    image: nginx:1.27-alpine
+    container_name: gema-web
     restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - gema-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gema-app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=gema
+      - DB_USERNAME=gema_user
+      - DB_PASSWORD=gema_secret
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gema-network
+
+  db:
+    image: mysql:8.0
+    container_name: gema-db
+    restart: unless-stopped
+    ports:
+      - "13306:3306"
+    environment:
+      MYSQL_DATABASE: gema
+      MYSQL_USER: gema_user
+      MYSQL_PASSWORD: gema_secret
+      MYSQL_ROOT_PASSWORD: root_secret
+    volumes:
+      - gema-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_secret"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - gema-network
+
+networks:
+  gema-network:
+    driver: bridge
+
+volumes:
+  gema-db-data:

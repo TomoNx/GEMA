@@ -82,15 +82,54 @@
 
 ## 📦 Instalasi
 
-### Prasyarat
+### 🚀 Cara 1: Menggunakan Docker (Rekomendasi - Tinggal Run!)
 
-- PHP 8.2+
+Cocok untuk tugas kelompok, matkul Cloud Computing, atau demo cepat. **Tidak perlu install PHP, Composer, Node.js, atau MySQL manual di komputer host.**
+
+#### Prasyarat:
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) sudah terinstall dan berjalan.
+
+#### Langkah Cepat (Windows):
+Cukup double-click file **`run.bat`** di root folder project, atau lewat terminal:
+```cmd
+run.bat
+```
+
+#### Langkah Cepat (macOS / Linux):
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+#### Atau Menggunakan Docker Compose Langsung:
+```bash
+# 1. Start containers
+docker compose up -d --build
+
+# 2. Akses aplikasi di browser
+# http://localhost:8000
+```
+
+> 💡 **Otomatisasi Docker:**
+> Container akan otomatis:
+> - Meng-copy file `.env` dari `.env.example` jika belum ada
+> - Generate `APP_KEY` jika masih kosong
+> - Menunggu database MySQL siap (healthcheck)
+> - Menjalankan migration (`migrate --force`)
+> - Menjalankan database seeder (`db:seed --force`) untuk membuat user guide dan doa-doa
+> - Mengatur permission storage & cache
+
+---
+
+### ⚙️ Cara 2: Instalasi Manual (Lokal)
+
+#### Prasyarat
+- PHP 8.2+ (ekstensi: `gd`, `pdo_mysql`, `bcmath`, `curl`, `mbstring`, `zip`, `intl`, `pcntl`)
 - Composer
-- Node.js 18+
-- [LiveKit Cloud Account](https://livekit.io/) (gratis)
+- Node.js 18+ & npm
+- MySQL Server
 
-### Langkah Instalasi
-
+#### Langkah:
 ```bash
 # 1. Clone repository
 git clone https://github.com/TomoNx/GEMA.git
@@ -104,7 +143,7 @@ npm install
 cp .env.example .env
 php artisan key:generate
 
-# 4. Konfigurasi LiveKit (lihat bagian Konfigurasi)
+# 4. Sesuaikan konfigurasi database dan LiveKit di .env
 
 # 5. Setup database
 php artisan migrate
@@ -115,15 +154,41 @@ npm run build
 php artisan serve
 ```
 
-### Konfigurasi LiveKit
+---
 
-Ada 2 opsi untuk setup LiveKit:
+## ☁️ Arsitektur Cloud Computing
 
-#### Opsi 1: LiveKit Cloud (Recommended untuk Production)
+Aplikasi ini menggunakan pola arsitektur **3-Tier Container Architecture** dengan integrasi **External Cloud SaaS**:
 
-1. Daftar di [LiveKit Cloud](https://cloud.livekit.io/) (gratis untuk development)
+```
+┌────────────────────────────────────────────────────────┐
+│                 Client (Browser / HP)                  │
+└──────────────┬───────────────────────────┬─────────────┘
+               │ HTTP (:8000)              │ WebRTC Audio
+               ▼                           ▼
+┌──────────────────────────────┐  ┌──────────────────────┐
+│    Tier 1: Web Server        │  │ LiveKit Cloud (SaaS) │
+│       (Nginx Alpine)         │  │  (*.livekit.cloud)   │
+└──────────────┬───────────────┘  └──────────▲───────────┘
+               │ FastCGI (:9000)             │ Generate
+               ▼                             │ JWT Token
+┌──────────────────────────────┐             │
+│ Tier 2: Application Runtime  │─────────────┘
+│        (PHP 8.3-FPM)         │
+└──────────────┬───────────────┘
+               │ MySQL (:3306)
+               ▼
+┌──────────────────────────────┐
+│   Tier 3: Database Storage   │
+│    (MySQL 8.0 + Volume)      │
+└──────────────────────────────┘
+```
+
+### 🎙️ Konfigurasi LiveKit Cloud
+GEMA menggunakan [LiveKit Cloud](https://cloud.livekit.io/) untuk WebRTC audio streaming:
+1. Daftar gratis di [LiveKit Cloud](https://cloud.livekit.io/)
 2. Buat project baru
-3. Copy credentials ke `.env`:
+3. Masukkan credentials ke file `.env`:
 
 ```env
 LIVEKIT_API_KEY=your_api_key
@@ -131,44 +196,6 @@ LIVEKIT_API_SECRET=your_api_secret
 LIVEKIT_HOST=https://your-project.livekit.cloud
 LIVEKIT_WS_URL=wss://your-project.livekit.cloud
 ```
-
-#### Opsi 2: Self-Hosted dengan Docker (Development/On-Premise)
-
-Untuk development lokal atau deployment on-premise, jalankan LiveKit server sendiri:
-
-```bash
-# 1. Jalankan LiveKit server
-docker run --rm -p 7880:7880 -p 7881:7881 -p 7882:7882/udp \
-  -e LIVEKIT_KEYS="devkey: secret" \
-  livekit/livekit-server \
-  --dev
-
-# 2. Update .env
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secret
-LIVEKIT_HOST=http://localhost:7880
-LIVEKIT_WS_URL=ws://localhost:7880
-```
-
-Atau gunakan `docker-compose.yml` yang sudah disediakan:
-
-```bash
-docker-compose up -d livekit
-```
-
-> ⚠️ **Catatan:** Self-hosted LiveKit memerlukan HTTPS untuk production. Gunakan reverse proxy (nginx/traefik) dengan SSL certificate.
-
-#### Perbandingan Opsi
-
-| Aspek | LiveKit Cloud | Self-Hosted |
-|-------|---------------|-------------|
-| Setup | Mudah (5 menit) | Perlu konfigurasi |
-| Biaya | Gratis (limit) / Berbayar | Gratis (server sendiri) |
-| Maintenance | Tidak perlu | Perlu maintain server |
-| Scalability | Auto-scale | Manual scaling |
-| Latency | Optimal (CDN global) | Tergantung lokasi server |
-| Cocok untuk | Production, MVP | Development, On-premise |
-
 ---
 
 ## 🚀 Penggunaan

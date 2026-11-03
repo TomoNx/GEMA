@@ -16,11 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create test guide user
-        User::factory()->create([
-            'name' => 'Guide Test',
-            'email' => 'guide@gema.test',
-            'password' => bcrypt('password'),
-        ]);
+        User::firstOrCreate(
+            ['email' => 'guide@gema.test'],
+            [
+                'name' => 'Guide Test',
+                'password' => bcrypt('password'),
+                'email_verified_at' => now(),
+            ]
+        );
 
         // Seed prayers
         $this->call(PrayerSeeder::class);

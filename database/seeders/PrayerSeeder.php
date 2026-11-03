@@ -36,7 +36,7 @@ class PrayerSeeder extends Seeder
         ];
 
         foreach ($prayers as $prayer) {
-            Prayer::create($prayer);
+            Prayer::firstOrCreate(['title' => $prayer['title']], $prayer);
         }
     }
 }
