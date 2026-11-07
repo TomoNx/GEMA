@@ -9,11 +9,18 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
-# 2. Application Key check
-if [ -z "$APP_KEY" ] && ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
-    echo "🔑 Generating Laravel application key..."
-    php artisan key:generate --force
+# 2. Application Key check & injection
+if [ -n "$APP_KEY" ] && [ "$APP_KEY" != "" ]; then
+    echo "🔑 Using APP_KEY from environment..."
+    sed -i "s|^APP_KEY=.*|APP_KEY=$APP_KEY|" /var/www/html/.env
+else
+    echo "🔑 Generating fresh Laravel application key..."
+    NEW_KEY=$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')
+    sed -i "s|^APP_KEY=.*|APP_KEY=$NEW_KEY|" /var/www/html/.env
+    export APP_KEY="$NEW_KEY"
 fi
+
+php artisan config:clear --ansi > /dev/null 2>&1 || true
 
 # Run package discover to ensure all service providers are registered
 php artisan package:discover --ansi > /dev/null 2>&1 || true
