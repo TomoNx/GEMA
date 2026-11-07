@@ -10,7 +10,7 @@ if [ ! -f /var/www/html/.env ]; then
 fi
 
 # 2. Application Key check
-if ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
+if [ -z "$APP_KEY" ] && ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
     echo "🔑 Generating Laravel application key..."
     php artisan key:generate --force
 fi
@@ -19,17 +19,22 @@ fi
 php artisan package:discover --ansi > /dev/null 2>&1 || true
 
 # 3. Wait for Database
-echo "⏳ Waiting for database connection ($DB_HOST:$DB_PORT)..."
-MAX_TRIES=30
+MAX_TRIES=15
 TRIES=0
 until php -r "
   try {
-    \$host = getenv('DB_HOST') ?: 'db';
-    \$port = getenv('DB_PORT') ?: '3306';
-    \$db   = getenv('DB_DATABASE') ?: 'gema';
-    \$user = getenv('DB_USERNAME') ?: 'gema_user';
-    \$pass = getenv('DB_PASSWORD') ?: 'gema_secret';
-    \$pdo = new PDO(\"mysql:host=\$host;port=\$port;dbname=\$db\", \$user, \$pass, [PDO::ATTR_TIMEOUT => 2]);
+    \$socket = getenv('DB_SOCKET');
+    \$db     = getenv('DB_DATABASE') ?: 'gema';
+    \$user   = getenv('DB_USERNAME') ?: 'root';
+    \$pass   = getenv('DB_PASSWORD') ?: '';
+    if (\$socket) {
+        \$dsn = \"mysql:unix_socket=\$socket;dbname=\$db\";
+    } else {
+        \$host = getenv('DB_HOST') ?: '127.0.0.1';
+        \$port = getenv('DB_PORT') ?: '3306';
+        \$dsn  = \"mysql:host=\$host;port=\$port;dbname=\$db\";
+    }
+    \$pdo = new PDO(\$dsn, \$user, \$pass, [PDO::ATTR_TIMEOUT => 2]);
     exit(0);
   } catch (\Throwable \$e) {
     exit(1);
@@ -40,8 +45,8 @@ until php -r "
         echo "❌ Timed out waiting for database."
         break
     fi
-    echo "   Database not ready yet ($TRIES/$MAX_TRIES), waiting 2s..."
-    sleep 2
+    echo "   Database not ready yet ($TRIES/$MAX_TRIES), waiting 1s..."
+    sleep 1
 done
 
 echo "✅ Database is ready!"
