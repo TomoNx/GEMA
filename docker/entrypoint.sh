@@ -9,18 +9,51 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
+# Sync environment variables from Cloud Run into .env file
+[ -n "$APP_NAME" ]           && sed -i "s|^APP_NAME=.*|APP_NAME=$APP_NAME|" /var/www/html/.env
+[ -n "$APP_ENV" ]            && sed -i "s|^APP_ENV=.*|APP_ENV=$APP_ENV|" /var/www/html/.env
+[ -n "$APP_DEBUG" ]          && sed -i "s|^APP_DEBUG=.*|APP_DEBUG=$APP_DEBUG|" /var/www/html/.env
+[ -n "$DB_CONNECTION" ]      && sed -i "s|^DB_CONNECTION=.*|DB_CONNECTION=$DB_CONNECTION|" /var/www/html/.env
+[ -n "$DB_DATABASE" ]        && sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" /var/www/html/.env
+[ -n "$DB_USERNAME" ]        && sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" /var/www/html/.env
+[ -n "$DB_PASSWORD" ]        && sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" /var/www/html/.env
+
+# Handle Database Socket (Cloud SQL) or Host
+if [ -n "$DB_SOCKET" ]; then
+    echo "🔌 Using Cloud SQL Unix Socket ($DB_SOCKET)..."
+    if grep -q "^DB_SOCKET=" /var/www/html/.env; then
+        sed -i "s|^DB_SOCKET=.*|DB_SOCKET=$DB_SOCKET|" /var/www/html/.env
+    else
+        echo "DB_SOCKET=$DB_SOCKET" >> /var/www/html/.env
+    fi
+    # Clear DB_HOST so Laravel uses DB_SOCKET exclusively
+    sed -i "s|^DB_HOST=.*|DB_HOST=|" /var/www/html/.env
+elif [ -n "$DB_HOST" ]; then
+    sed -i "s|^DB_HOST=.*|DB_HOST=$DB_HOST|" /var/www/html/.env
+    sed -i "s|^DB_PORT=.*|DB_PORT=${DB_PORT:-3306}|" /var/www/html/.env
+fi
+
+# Sync LiveKit credentials if present
+[ -n "$LIVEKIT_API_KEY" ]    && sed -i "s|^LIVEKIT_API_KEY=.*|LIVEKIT_API_KEY=$LIVEKIT_API_KEY|" /var/www/html/.env
+[ -n "$LIVEKIT_API_SECRET" ] && sed -i "s|^LIVEKIT_API_SECRET=.*|LIVEKIT_API_SECRET=$LIVEKIT_API_SECRET|" /var/www/html/.env
+[ -n "$LIVEKIT_HOST" ]       && sed -i "s|^LIVEKIT_HOST=.*|LIVEKIT_HOST=$LIVEKIT_HOST|" /var/www/html/.env
+[ -n "$LIVEKIT_WS_URL" ]     && sed -i "s|^LIVEKIT_WS_URL=.*|LIVEKIT_WS_URL=$LIVEKIT_WS_URL|" /var/www/html/.env
+
 # 2. Application Key check & injection
 if [ -n "$APP_KEY" ] && [ "$APP_KEY" != "" ]; then
     echo "🔑 Using APP_KEY from environment..."
     sed -i "s|^APP_KEY=.*|APP_KEY=$APP_KEY|" /var/www/html/.env
 else
-    echo "🔑 Generating fresh Laravel application key..."
-    NEW_KEY=$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')
-    sed -i "s|^APP_KEY=.*|APP_KEY=$NEW_KEY|" /var/www/html/.env
-    export APP_KEY="$NEW_KEY"
+    if ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
+        echo "🔑 Generating fresh Laravel application key..."
+        NEW_KEY=$(php -r 'echo "base64:" . base64_encode(random_bytes(32));')
+        sed -i "s|^APP_KEY=.*|APP_KEY=$NEW_KEY|" /var/www/html/.env
+        export APP_KEY="$NEW_KEY"
+    fi
 fi
 
 php artisan config:clear --ansi > /dev/null 2>&1 || true
+php artisan cache:clear --ansi > /dev/null 2>&1 || true
 
 # Run package discover to ensure all service providers are registered
 php artisan package:discover --ansi > /dev/null 2>&1 || true
