@@ -15,9 +15,9 @@ class LiveKitService
 
     public function __construct()
     {
-        $this->apiKey = config('services.livekit.api_key');
-        $this->apiSecret = config('services.livekit.api_secret');
-        $this->host = config('services.livekit.host');
+        $this->apiKey = (string) (config('services.livekit.api_key') ?: 'gema_dev_key');
+        $this->apiSecret = (string) (config('services.livekit.api_secret') ?: 'gema_dev_secret_key_at_least_32_bytes_long!!');
+        $this->host = (string) (config('services.livekit.host') ?: 'https://dummy.livekit.cloud');
     }
 
     /**

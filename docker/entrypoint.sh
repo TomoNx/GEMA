@@ -12,7 +12,9 @@ fi
 # Sync environment variables from Cloud Run into .env file
 [ -n "$APP_NAME" ]           && sed -i "s|^APP_NAME=.*|APP_NAME=$APP_NAME|" /var/www/html/.env
 [ -n "$APP_ENV" ]            && sed -i "s|^APP_ENV=.*|APP_ENV=$APP_ENV|" /var/www/html/.env
+[ -n "$APP_KEY" ]            && sed -i "s|^APP_KEY=.*|APP_KEY=$APP_KEY|" /var/www/html/.env
 [ -n "$APP_DEBUG" ]          && sed -i "s|^APP_DEBUG=.*|APP_DEBUG=$APP_DEBUG|" /var/www/html/.env
+[ -n "$APP_URL" ]            && sed -i "s|^APP_URL=.*|APP_URL=$APP_URL|" /var/www/html/.env
 [ -n "$DB_CONNECTION" ]      && sed -i "s|^DB_CONNECTION=.*|DB_CONNECTION=$DB_CONNECTION|" /var/www/html/.env
 [ -n "$DB_DATABASE" ]        && sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" /var/www/html/.env
 [ -n "$DB_USERNAME" ]        && sed -i "s|^DB_USERNAME=.*|DB_USERNAME=$DB_USERNAME|" /var/www/html/.env

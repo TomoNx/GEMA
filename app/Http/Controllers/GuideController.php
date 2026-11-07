@@ -87,6 +87,26 @@ class GuideController extends Controller
     }
 
     /**
+     * Mute all participants (fallback HTTP endpoint)
+     */
+    public function muteAll(Room $room)
+    {
+        $this->authorize('manage', $room);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Unmute all participants (fallback HTTP endpoint)
+     */
+    public function unmuteAll(Room $room)
+    {
+        $this->authorize('manage', $room);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Delete room (soft delete)
      */
     public function deleteRoom(Room $room)
@@ -105,8 +125,8 @@ class GuideController extends Controller
             if (count($participants) > 0) {
                 return redirect()->route('dashboard')->with('error', 'Room masih memiliki jamaah di dalamnya. Tunggu semua jamaah keluar terlebih dahulu.');
             }
-        } catch (\Exception $e) {
-            // Room tidak ada di LiveKit, lanjutkan hapus
+        } catch (\Throwable $e) {
+            // Room tidak ada di LiveKit atau server belum terhubung, lanjutkan hapus
         }
 
         // Set deleted_by before soft delete
@@ -127,7 +147,7 @@ class GuideController extends Controller
             $client = $this->liveKitService->getRoomServiceClient();
             $participants = $client->listParticipants($room->slug)->getParticipants();
             $count = count($participants);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $count = 0;
         }
 

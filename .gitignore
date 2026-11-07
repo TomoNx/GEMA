@@ -3,6 +3,9 @@
 .env
 .env.*
 !.env.example
+.agents/
+.codegraph/
+*.pdf
 .phpactor.json
 .phpunit.result.cache
 /.fleet
